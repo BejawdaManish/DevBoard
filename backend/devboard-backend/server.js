@@ -67,8 +67,8 @@ app.post("/tasks", auth, async (req, res) => {
         title,
         description,
         status,
-        user_id,
         project_id,
+        user_id,
         due_date,
         priority
       )
@@ -79,8 +79,7 @@ app.post("/tasks", auth, async (req, res) => {
         'todo',
         $3,
         $4,
-        $5,
-        $6
+        $5
       )
       RETURNING *`,
       [
@@ -89,6 +88,7 @@ app.post("/tasks", auth, async (req, res) => {
         req.user.id,
         project_id,
         due_date,
+        priority
       ]
     );
 
