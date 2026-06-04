@@ -4,17 +4,19 @@ import KanbanBoard from "../components/KanbanBoard";
 import Navbar from "../components/Navbar";
 import ProjectCard from "../components/ProjectCard";
 import TaskCard from "../components/TaskCard";
-
+import AnalyticsChart from "../components/AnalyticsChart";
+import { DragDropContext } from "@hello-pangea/dnd";
 function Dashboard() {
     
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
   const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
- 
+ const [theme, setTheme] = useState(localStorage.getItem("theme") || "dark"
+);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-
+  const [priority, setPriority] =useState("Medium");
   const [title, setTitle] = useState("");
    const [dueDate, setDueDate] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
@@ -33,7 +35,11 @@ function Dashboard() {
     tasks.length > 0
       ? (completedTasks / tasks.length) * 100
       : 0;
+useEffect(() => {
+  localStorage.setItem("theme", theme);
 
+  document.body.className = theme;
+}, [theme]);
   useEffect(() => {
     fetchProjects();
   }, []);
@@ -46,7 +52,21 @@ function Dashboard() {
       console.log(err);
     }
   };
+const handleDragEnd = async (result) => {
+  if (!result.destination) return;
 
+  const taskId = Number(
+    result.draggableId
+  );
+
+  const newStatus =
+    result.destination.droppableId;
+
+  await updateStatus(
+    taskId,
+    newStatus
+  );
+};
   const createProject = async (e) => {
     e.preventDefault();
 
@@ -106,6 +126,7 @@ function Dashboard() {
         description: taskDescription,
         project_id: selectedProject,
          due_date: dueDate,
+           priority,
       });
 
       setTitle("");
@@ -171,7 +192,7 @@ function Dashboard() {
     if (filter === "All") return true;
     return task.status === filter;
   });
-
+console.log(projects);
  
   return (
     <>
@@ -221,41 +242,37 @@ function Dashboard() {
         </div>
 
         <hr />
+        <AnalyticsChart tasks={tasks} />
       
         {/* Create Project */}
 
         <h2>Create Project</h2>
+          <form
+            className="project-form"
+            onSubmit={createProject}
+          >
+            <input
+              type="text"
+              placeholder="Project Name"
+              value={name}
+              onChange={(e) =>
+                setName(e.target.value)
+              }
+            />
 
-        <form onSubmit={createProject}>
-          <input
-            type="text"
-            placeholder="Project Name"
-            value={name}
-            onChange={(e) =>
-              setName(e.target.value)
-            }
-          />
+            <input
+              type="text"
+              placeholder="Description"
+              value={description}
+              onChange={(e) =>
+                setDescription(e.target.value)
+              }
+            />
 
-          <br />
-          <br />
-
-          <input
-            type="text"
-            placeholder="Description"
-            value={description}
-            onChange={(e) =>
-              setDescription(e.target.value)
-            }
-          />
-
-          <br />
-          <br />
-
-          <button type="submit">
-            Create Project
-          </button>
-        </form>
-
+            <button type="submit">
+              Create Project
+            </button>
+          </form>
         <hr />
 
         {/* Projects */}
@@ -271,53 +288,58 @@ function Dashboard() {
 />
 
 <br />
-<br />
 
-        {projects.length === 0 ? (
-          <p>No Projects Found</p>
-        ) : (
-          projects
-           .filter((project) =>
-         project.name
-         .toLowerCase()
-         .includes(search.toLowerCase())
-  )
-          .map((project) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              fetchTasks={fetchTasks}
-              deleteProject={deleteProject}
-              editProject={editProject}
-            />
-          ))
-        )}
-   
-
+{projects.length === 0 ? (
+  <p>No Projects Found</p>
+) : (
+  projects
+    .filter(
+      (project) =>
+        project &&
+        project.name &&
+        project.name.trim() !== ""
+    )
+    .filter((project) =>
+      project.name
+        .toLowerCase()
+        .includes(search.toLowerCase())
+    )
+    .map((project) => (
+      <ProjectCard
+        key={project.id}
+        project={project}
+        fetchTasks={fetchTasks}
+        deleteProject={deleteProject}
+        editProject={editProject}
+      />
+    ))
+)}
         {/* Tasks */}
 
         {selectedProject && (
           <>
             <hr />
-            <div className="btn-group">
-  <button onClick={() => setFilter("All")}>
-    All
-  </button>
+                      <div className="btn-group">
+            <button onClick={() => setFilter("All")}>
+              All
+            </button>
 
-  <button onClick={() => setFilter("Pending")}>
-    Pending
-  </button>
+            <button onClick={() => setFilter("Pending")}>
+              Pending
+            </button>
 
-  <button onClick={() => setFilter("Completed")}>
-    Completed
-  </button>
-</div>
+            <button onClick={() => setFilter("Completed")}>
+              Completed
+            </button>
+          </div>
 
 <br />
 
             <h2>Tasks({tasks.length})</h2>
 
-            <form onSubmit={createTask}>
+            <form  
+                  className="task-form"
+                  onSubmit={createTask}>
               <input
                 type="text"
                 placeholder="Task Title"
@@ -340,6 +362,7 @@ function Dashboard() {
                   )
                 }
               />
+         
               <input
                 type="date"
                 value={dueDate}
@@ -347,6 +370,14 @@ function Dashboard() {
                   setDueDate(e.target.value)
                 }
               />
+               <select
+                value={priority}
+                onChange={(e) => setPriority(e.target.value)}
+              >
+                <option value="High">🔴 High</option>
+                <option value="Medium">🟡 Medium</option>
+                <option value="Low">🟢 Low</option>
+              </select>
 
               <br />
               <br />
@@ -376,7 +407,11 @@ function Dashboard() {
       <hr />
 
 <h2>Kanban Board</h2>
+<DragDropContext
+  onDragEnd={handleDragEnd}
+>
 
+</DragDropContext>
 <KanbanBoard tasks={tasks} />
     </>
   );

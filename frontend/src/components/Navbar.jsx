@@ -18,6 +18,7 @@ function Navbar() {
       <button onClick={logout}>
         <FaSignOutAlt /> Logout
       </button>
+    
     </nav>
   );
 }

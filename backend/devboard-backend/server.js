@@ -69,7 +69,8 @@ app.post("/tasks", auth, async (req, res) => {
         status,
         user_id,
         project_id,
-        due_date
+        due_date,
+        priority
       )
       VALUES
       (
@@ -78,7 +79,8 @@ app.post("/tasks", auth, async (req, res) => {
         'todo',
         $3,
         $4,
-        $5
+        $5,
+        $6
       )
       RETURNING *`,
       [
@@ -311,25 +313,33 @@ app.post("/login", async (req, res) => {
   }
 });
 app.post("/projects", auth, async (req, res) => {
+  const { name, description } = req.body;
+
+  if (!name || !name.trim()) {
+    return res.status(400).json({
+      error: "Project name is required",
+    });
+  }
+
   try {
-    console.log("REQ BODY:", req.body);
-
-    const { name, description } = req.body;
-
-    console.log("NAME:", name);
-    console.log("DESCRIPTION:", description);
-
     const result = await pool.query(
-      `INSERT INTO projects(name, description, user_id)
-       VALUES($1, $2, $3)
+      `INSERT INTO projects
+       (name, description, user_id)
+       VALUES ($1,$2,$3)
        RETURNING *`,
-      [name, description, req.user.id]
+      [
+        name,
+        description,
+        req.user.id,
+      ]
     );
 
     res.status(201).json(result.rows[0]);
-
   } catch (err) {
     console.error(err);
+    res.status(500).json({
+      error: err.message,
+    });
   }
 });
 app.get("/projects", auth, async (req, res) => {

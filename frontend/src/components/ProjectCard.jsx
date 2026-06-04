@@ -2,6 +2,9 @@ function ProjectCard({
   project,
   fetchTasks,
   deleteProject,
+   editProject,
+   taskCount,
+
 }) {
   return (
     <div className="project-card">
@@ -26,11 +29,11 @@ function ProjectCard({
           Delete
         </button>
         <button
-  onClick={() =>
-    editProject(
-      project.id,
-      project.name,
-      project.description
+          onClick={() =>
+               editProject(
+                  project.id,
+                  project.name,
+                  project.description
     )
   }
 >

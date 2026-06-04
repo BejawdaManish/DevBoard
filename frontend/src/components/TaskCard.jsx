@@ -29,6 +29,14 @@ function TaskCard({
             ).toLocaleDateString()
           : " No Date"}
       </p>
+       <p>
+        Priority:
+        {task.priority === "High"
+          ? " 🔴 High"
+          : task.priority === "Medium"
+          ? " 🟡 Medium"
+          : " 🟢 Low"}
+      </p>
 
       <span
         className={

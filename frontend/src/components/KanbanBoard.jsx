@@ -1,3 +1,9 @@
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+} 
+from "@hello-pangea/dnd";
 function KanbanBoard({ tasks }) {
   const todoTasks = tasks.filter(
     (task) => task.status === "todo"
