@@ -79,7 +79,8 @@ app.post("/tasks", auth, async (req, res) => {
         'todo',
         $3,
         $4,
-        $5
+        $5,
+        $6
       )
       RETURNING *`,
       [
