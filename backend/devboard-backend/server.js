@@ -47,18 +47,46 @@ app.get("/tasks", auth, async (req, res) => {
 });
 app.post("/tasks", auth, async (req, res) => {
   try {
-    const { title, description, project_id } = req.body;
+
+    const {
+      title,
+      description,
+      project_id,
+      due_date
+    } = req.body;
+
+    if (!title.trim()) {
+      return res.status(400).json({
+        error: "Task title required",
+      });
+    }
 
     const result = await pool.query(
       `INSERT INTO tasks
-      (title, description, user_id, project_id)
-      VALUES ($1, $2, $3, $4)
+      (
+        title,
+        description,
+        status,
+        user_id,
+        project_id,
+        due_date
+      )
+      VALUES
+      (
+        $1,
+        $2,
+        'todo',
+        $3,
+        $4,
+        $5
+      )
       RETURNING *`,
       [
         title,
         description,
         req.user.id,
-        project_id
+        project_id,
+        due_date,
       ]
     );
 
@@ -66,8 +94,9 @@ app.post("/tasks", auth, async (req, res) => {
 
   } catch (err) {
     console.error(err);
+
     res.status(500).json({
-      error: err.message
+      error: err.message,
     });
   }
 });
@@ -156,6 +185,34 @@ app.delete("/tasks/:id", auth, async (req, res) => {
     console.error(err);
     res.status(500).json({
       error: err.message
+    });
+  }
+});
+app.put("/projects/:id", auth, async (req, res) => {
+  try {
+    const { name, description } = req.body;
+
+    const result = await pool.query(
+      `UPDATE projects
+       SET name = $1,
+           description = $2
+       WHERE id = $3
+       AND user_id = $4
+       RETURNING *`,
+      [
+        name,
+        description,
+        req.params.id,
+        req.user.id,
+      ]
+    );
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      error: err.message,
     });
   }
 });
@@ -335,6 +392,23 @@ app.delete("/projects/:id", auth, async (req, res) => {
     res.status(500).json({
       error: err.message
     });
+  }
+});
+app.put("/tasks/:id", auth, async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    const result = await pool.query(
+      `UPDATE tasks
+       SET status = $1
+       WHERE id = $2
+       RETURNING *`,
+      [status, req.params.id]
+    );
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
   }
 });
 app.patch("/tasks/:id", auth, async (req, res) => {

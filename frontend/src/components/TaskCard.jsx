@@ -1,32 +1,82 @@
 function TaskCard({
   task,
-  onComplete,
+  onUpdate,
   onDelete,
 }) {
+
+  const isOverdue =
+    task.due_date &&
+    new Date(task.due_date) < new Date() &&
+    task.status !== "Completed";
+
   return (
-    <div className="task-card">
+    <div
+      className={
+        isOverdue
+          ? "task-card overdue"
+          : "task-card"
+      }
+    >
       <h3>{task.title}</h3>
 
       <p>{task.description}</p>
 
+      <p>
+        📅 Due:
+        {task.due_date
+          ? new Date(
+              task.due_date
+            ).toLocaleDateString()
+          : " No Date"}
+      </p>
+
       <span
         className={
           task.status === "Completed"
-            ? "status completed"
-            : "status pending"
+            ? "completed"
+            : "pending"
         }
       >
         {task.status}
       </span>
 
       <div className="btn-group">
-        <button
-          onClick={() =>
-            onComplete(task.id)
-          }
-        >
-          Complete
-        </button>
+
+        {task.status !== "todo" && (
+          <button
+            onClick={() =>
+              onUpdate(task.id, "todo")
+            }
+          >
+            Todo
+          </button>
+        )}
+
+        {task.status !== "In Progress" && (
+          <button
+            onClick={() =>
+              onUpdate(
+                task.id,
+                "In Progress"
+              )
+            }
+          >
+            Progress
+          </button>
+        )}
+
+        {task.status !== "Completed" && (
+          <button
+            onClick={() =>
+              onUpdate(
+                task.id,
+                "Completed"
+              )
+            }
+          >
+            Complete
+          </button>
+        )}
 
         <button
           onClick={() =>
@@ -35,6 +85,7 @@ function TaskCard({
         >
           Delete
         </button>
+
       </div>
     </div>
   );

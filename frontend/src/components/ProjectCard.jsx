@@ -25,6 +25,17 @@ function ProjectCard({
         >
           Delete
         </button>
+        <button
+  onClick={() =>
+    editProject(
+      project.id,
+      project.name,
+      project.description
+    )
+  }
+>
+  Edit
+</button>
       </div>
     </div>
   );

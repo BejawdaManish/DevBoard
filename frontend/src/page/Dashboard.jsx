@@ -1,18 +1,22 @@
 import { useEffect, useState } from "react";
 import API from "../services/api";
-
+import KanbanBoard from "../components/KanbanBoard";
 import Navbar from "../components/Navbar";
 import ProjectCard from "../components/ProjectCard";
 import TaskCard from "../components/TaskCard";
 
 function Dashboard() {
+    
+  const [filter, setFilter] = useState("All");
+  const [search, setSearch] = useState("");
   const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
-
+ 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
 
   const [title, setTitle] = useState("");
+   const [dueDate, setDueDate] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
 
   const [selectedProject, setSelectedProject] = useState(null);
@@ -20,6 +24,10 @@ function Dashboard() {
   const completedTasks = tasks.filter(
     (task) => task.status === "Completed"
   ).length;
+  const pendingTasks = tasks.filter(
+  (task) => task.status === "todo"
+).length;
+ 
 
   const progress =
     tasks.length > 0
@@ -87,16 +95,22 @@ function Dashboard() {
 
   const createTask = async (e) => {
     e.preventDefault();
+    if (!title.trim()) {
+    alert("Task title is required");
+    return;
+  }
 
     try {
       await API.post("/tasks", {
         title,
         description: taskDescription,
         project_id: selectedProject,
+         due_date: dueDate,
       });
 
       setTitle("");
       setTaskDescription("");
+      setDueDate("");
 
       fetchTasks(selectedProject);
     } catch (err) {
@@ -124,7 +138,41 @@ function Dashboard() {
       console.log(err);
     }
   };
+  const editProject = async (
+  id,
+  currentName,
+  currentDescription
+) => {
+  const newName = prompt(
+    "Project Name",
+    currentName
+  );
 
+  const newDescription = prompt(
+    "Description",
+    currentDescription
+  );
+
+  if (!newName) return;
+
+  try {
+    await API.put(`/projects/${id}`, {
+      name: newName,
+      description: newDescription,
+    });
+
+    fetchProjects();
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+  const filteredTasks = tasks.filter((task) => {
+    if (filter === "All") return true;
+    return task.status === filter;
+  });
+
+ 
   return (
     <>
       <Navbar />
@@ -150,6 +198,10 @@ function Dashboard() {
             <p>Completed Tasks</p>
           </div>
         </div>
+        <div className="stat-card">
+        <h3>{pendingTasks}</h3>
+         <p>Pending Tasks</p>
+        </div>
 
         {/* Progress Bar */}
 
@@ -169,7 +221,7 @@ function Dashboard() {
         </div>
 
         <hr />
-
+      
         {/* Create Project */}
 
         <h2>Create Project</h2>
@@ -209,27 +261,61 @@ function Dashboard() {
         {/* Projects */}
 
         <h2>Projects</h2>
+        <input
+  type="text"
+  placeholder="🔍 Search Projects..."
+  value={search}
+  onChange={(e) =>
+    setSearch(e.target.value)
+  }
+/>
+
+<br />
+<br />
 
         {projects.length === 0 ? (
           <p>No Projects Found</p>
         ) : (
-          projects.map((project) => (
+          projects
+           .filter((project) =>
+         project.name
+         .toLowerCase()
+         .includes(search.toLowerCase())
+  )
+          .map((project) => (
             <ProjectCard
               key={project.id}
               project={project}
               fetchTasks={fetchTasks}
               deleteProject={deleteProject}
+              editProject={editProject}
             />
           ))
         )}
+   
 
         {/* Tasks */}
 
         {selectedProject && (
           <>
             <hr />
+            <div className="btn-group">
+  <button onClick={() => setFilter("All")}>
+    All
+  </button>
 
-            <h2>Tasks</h2>
+  <button onClick={() => setFilter("Pending")}>
+    Pending
+  </button>
+
+  <button onClick={() => setFilter("Completed")}>
+    Completed
+  </button>
+</div>
+
+<br />
+
+            <h2>Tasks({tasks.length})</h2>
 
             <form onSubmit={createTask}>
               <input
@@ -254,6 +340,13 @@ function Dashboard() {
                   )
                 }
               />
+              <input
+                type="date"
+                value={dueDate}
+                onChange={(e) =>
+                  setDueDate(e.target.value)
+                }
+              />
 
               <br />
               <br />
@@ -265,21 +358,26 @@ function Dashboard() {
 
             <hr />
 
-            {tasks.length === 0 ? (
-              <p>No Tasks Found</p>
-            ) : (
-              tasks.map((task) => (
+            {filteredTasks.length === 0 ? (
+              <p>No {filter} Tasks Found</p>
+             ) : (
+              filteredTasks.map((task) => (
                 <TaskCard
                   key={task.id}
                   task={task}
-                  updateStatus={updateStatus}
-                  deleteTask={deleteTask}
+                  onUpdate={updateStatus}
+                  onDelete={deleteTask}
                 />
               ))
             )}
           </>
         )}
       </div>
+      <hr />
+
+<h2>Kanban Board</h2>
+
+<KanbanBoard tasks={tasks} />
     </>
   );
 }
